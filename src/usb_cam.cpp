@@ -56,6 +56,10 @@
 
 #define CLEAR(x) memset (&(x), 0, sizeof (x))
 
+#define avcodec_alloc_frame av_frame_alloc
+#define PIX_FMT_RGB24 AV_PIX_FMT_RGB24
+#define PIX_FMT_YUV422P AV_PIX_FMT_YUV422P
+
 namespace usb_cam {
 
 static void errno_exit(const char * s)
@@ -385,6 +389,7 @@ int UsbCam::init_mjpeg_decoder(int image_width, int image_height)
   avcodec_context_->height = image_height;
 
 #if LIBAVCODEC_VERSION_MAJOR > 52
+  ROS_INFO("VERSION > 52");
   avcodec_context_->pix_fmt = PIX_FMT_YUV422P;
   avcodec_context_->codec_type = AVMEDIA_TYPE_VIDEO;
 #endif
@@ -433,6 +438,7 @@ void UsbCam::mjpeg2rgb(char *MJPEG, int len, char *RGB, int NumPixels)
 
   int xsize = avcodec_context_->width;
   int ysize = avcodec_context_->height;
+
   int pic_size = avpicture_get_size(avcodec_context_->pix_fmt, xsize, ysize);
   if (pic_size != avframe_camera_size_)
   {
@@ -440,8 +446,22 @@ void UsbCam::mjpeg2rgb(char *MJPEG, int len, char *RGB, int NumPixels)
     return;
   }
 
-  video_sws_ = sws_getContext(xsize, ysize, avcodec_context_->pix_fmt, xsize, ysize, PIX_FMT_RGB24, SWS_BILINEAR, NULL,
-			      NULL,  NULL);
+  AVPixelFormat  pFormat;
+
+  switch (avcodec_context_->pix_fmt)
+  {
+  case AV_PIX_FMT_YUVJ420P : pFormat = AV_PIX_FMT_YUV420P; break;
+  case AV_PIX_FMT_YUVJ422P : pFormat = AV_PIX_FMT_YUV422P; break;
+  case AV_PIX_FMT_YUVJ444P : pFormat = AV_PIX_FMT_YUV444P; break;
+  case AV_PIX_FMT_YUVJ440P : pFormat = AV_PIX_FMT_YUV440P;
+  default:
+      pFormat = avcodec_context_->pix_fmt;
+      break;
+  }
+
+  video_sws_ = sws_getContext(xsize, ysize, pFormat, xsize, ysize, PIX_FMT_RGB24, SWS_BILINEAR, NULL,
+                  NULL,  NULL);
+
   sws_scale(video_sws_, avframe_camera_->data, avframe_camera_->linesize, 0, ysize, avframe_rgb_->data,
             avframe_rgb_->linesize);
   sws_freeContext(video_sws_);
