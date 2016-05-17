@@ -7,9 +7,14 @@ project(usb_cam)
 find_package(catkin REQUIRED COMPONENTS image_transport roscpp std_msgs std_srvs sensor_msgs camera_info_manager)
 
 ## pkg-config libraries
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(avcodec libavcodec REQUIRED)
-pkg_check_modules(swscale libswscale REQUIRED)
+#find_package(PkgConfig REQUIRED)
+#pkg_check_modules(avcodec libavcodec REQUIRED)
+#pkg_check_modules(swscale libswscale REQUIRED)
+
+set(avcodec_LIBRARIES /usr/local/lib/libavcodec.so.57)
+set(swscale_LIBRARIES /usr/local/lib/libswscale.so.4)
+set(avcodec_INCLUDE_DIRS /usr/local/include/libavcodec)
+set(swscale_INCLUDE_DIRS /usr/local/include/libswscale)
 
 ###################################################
 ## Declare things to be passed to other projects ##
